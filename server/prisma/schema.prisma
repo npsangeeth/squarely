@@ -1,0 +1,59 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+enum Role {
+  MEMBER
+  OWNER
+}
+model User {
+  id              String      @id @default(uuid()) @db.Uuid
+  email           String      @unique
+  password_hash   String
+  name            String
+  avatar_url      String
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  createdGroups Group[] @relation("CreatedByUser")
+
+  groupMemberships GroupMember[]
+}
+
+model Group {
+  id              String      @id @default(uuid()) @db.Uuid
+  name            String
+  icon_url        String?
+  default_currency String   @default("INR")
+  created_by      User      @relation("CreatedByUser", fields: [created_by_id], references: [id])
+  created_by_id   String    @db.Uuid
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  members GroupMember[]
+}
+
+
+model GroupMember {
+  id              String      @id @default(uuid()) @db.Uuid
+  group_id        String    @db.Uuid
+  user_id         String    @db.Uuid
+  role            String    @default("member") 
+  group           Group     @relation(fields: [group_id], references: [id])
+  user            User      @relation(fields: [user_id], references: [id])
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([group_id, user_id])
+}
